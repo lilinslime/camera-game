@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera-game Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand-light-green': '#a7f3d0', /* emerald-200 */
+                        'brand-green': '#34d399',       /* emerald-400 */
+                        'brand-dark': '#0f172a',        /* slate-900 */
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #0f172a;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Minimalist Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Custom Checkbox Styling */
+        .custom-checkbox input:checked + div {
+            background-color: #34d399;
+            border-color: #34d399;
+        }
+        .custom-checkbox input:checked + div svg {
+            display: block;
+        }
+
+        /* Hover effects for game cards */
+        .game-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+            border-color: #34d399;
+        }
+
+        /* Toast notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .toast {
+            min-width: 280px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            background-color: #0f172a;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideIn 0.3s ease-out forwards, fadeOut 0.3s ease-in forwards 3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .toast.error {
+            background-color: #ef4444;
+        }
+        @keyframes slideIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center py-4 gap-4">
+                
+                <!-- Logo -->
+                <div class="flex items-center cursor-pointer group" onclick="app.navigate('home', 'All')">
+                    <div class="w-10 h-10 bg-brand-green rounded-xl flex items-center justify-center mr-3 group-hover:bg-brand-light-green transition-colors">
+                        <i class="fa-solid fa-camera text-brand-dark text-xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold tracking-tight text-brand-dark">Camera-game</h1>
+                </div>
+
+                <!-- Navigation/Filters -->
+                <nav class="flex flex-wrap justify-center gap-2" id="nav-categories">
+                    <!-- Buttons injected via JS -->
+                </nav>
+
+                <!-- Action Button -->
+                <div>
+                    <button onclick="app.navigate('upload')" class="bg-brand-dark hover:bg-gray-800 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Upload Game
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
+        
+        <!-- ================= VIEW: CATALOG (HOME) ================= -->
+        <div id="view-home" class="view-section">
+            <div class="mb-8 border-b border-gray-100 pb-4">
+                <h2 class="text-3xl font-bold text-brand-dark" id="current-category-title">All Games</h2>
+                <p class="text-gray-500 mt-2 text-sm" id="category-subtitle">Browse and play available games in this category.</p>
+            </div>
+            
+            <div id="game-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                <!-- Game cards injected via JS -->
+            </div>
+            
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-24 text-gray-400">
+                <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-ghost text-4xl text-gray-300"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-900">No games found</h3>
+                <p class="mt-2 text-sm text-gray-500">There are no games in this category yet.</p>
+                <button onclick="app.navigate('upload')" class="mt-6 text-brand-green font-medium hover:underline">
+                    Upload the first one
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: PLAYER ================= -->
+        <div id="view-player" class="view-section hidden flex flex-col h-[75vh]">
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="app.navigate('home')" class="text-gray-500 hover:text-brand-dark transition-colors flex items-center gap-2 font-medium">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Games
+                </button>
+                <h2 class="text-2xl font-bold text-brand-dark" id="player-title">Playing Game</h2>
+                <div class="w-24"></div> <!-- Spacer for centering -->
+            </div>
+            
+            <div class="flex-grow rounded-xl overflow-hidden shadow-lg border border-gray-200 relative bg-gray-50 p-1" id="iframe-container">
+                <iframe id="game-iframe" sandbox="allow-scripts allow-same-origin allow-pointer-lock text/html"></iframe>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: UPLOAD ================= -->
+        <div id="view-upload" class="view-section hidden max-w-2xl mx-auto">
+            <div class="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-brand-dark mb-2">Add New Game</h2>
+                    <p class="text-gray-500 text-sm">Upload your single-file HTML game to the portal. It will be stored locally in your browser.</p>
+                </div>
+                
+                <form id="upload-form" class="space-y-8">
+                    <!-- Title Input -->
+                    <div>
+                        <label for="game-title" class="block text-sm font-semibold text-gray-700 mb-1">Game Title <span class="text-red-500">*</span></label>
+                        <input type="text" id="game-title" required 
+                               class="w-full bg-gray-50 border border-gray-300 rounded-lg py-3 px-4 text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent transition-all" 
+                               placeholder="e.g., Infinite Runner">
+                    </div>
+
+                    <!-- HTML File Input -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Game File (.html) <span class="text-red-500">*</span></label>
+                        <div class="mt-2 flex justify-center px-6 py-10 border-2 border-dashed border-gray-300 rounded-xl hover:border-brand-green hover:bg-brand-light-green/20 transition-all group relative cursor-pointer" id="drop-zone">
+                            <div class="space-y-2 text-center">
+                                <div class="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-code text-xl text-brand-green"></i>
+                                </div>
+                                <div class="flex text-sm text-gray-600 justify-center">
+                                    <label for="file-upload" class="relative cursor-pointer rounded-md font-medium text-brand-green hover:text-green-600 focus-within:outline-none">
+                                        <span>Click to browse</span>
+                                        <input id="file-upload" name="file-upload" type="file" class="sr-only" accept=".html,.htm" required>
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500 font-medium" id="file-name-display">Single HTML file only</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Checkboxes -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Categories <span class="text-gray-400 font-normal">(Select all that apply)</span></label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="checkbox-container">
+                            <!-- Checkboxes injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-4 border-t border-gray-100">
+                        <button type="submit" class="w-full flex justify-center items-center py-3.5 px-4 rounded-xl shadow-sm text-sm font-bold text-brand-dark bg-brand-green hover:bg-brand-light-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green transition-colors">
+                            <i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Publish to Portal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // --- Core Application State ---
+        const CATEGORIES = ['Reflex', '1 Player', '2 Player', 'Exercise', 'Decision Making'];
+        
+        const AppState = {
+            games: [],
+            currentCategory: 'All',
+            currentView: 'home'
+        };
+
+        // --- Demo Data ---
+        const DEMO_HTML = `
+        <!DOCTYPE html><html><head><style>
+            body { margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#f8fafc; font-family:sans-serif; color:#0f172a;}
+            h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+            .box { width: 100px; height: 100px; background: #34d399; border-radius: 16px; cursor: pointer; transition: transform 0.1s; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top:20px;}
+            .box:active { transform: scale(0.95); }
+        </style></head><body>
+            <h1>Reflex Tester</h1>
+            <p>Click the block as fast as possible.</p>
+            <div class="box" onclick="score++ ; this.innerText = score;">0</div>
+            <script>let score = 0;<\/script>
+        </body></html>
+        `;
+
+        const defaultGames = [
+            {
+                id: 'demo_1',
+                title: 'Simple Reflex Test',
+                categories: ['Reflex', '1 Player'],
+                // Convert string to base64 for unified iframe loading
+                source: 'data:text/html;base64,' + btoa(unescape(encodeURIComponent(DEMO_HTML))),
+                thumbnail: 'https://placehold.co/600x400/f1f5f9/34d399?text=Reflex+Game',
+                dateAdded: Date.now()
+            }
+        ];
+
+        const app = {
+            init() {
+                this.loadGames();
+                this.renderNavbar();
+                this.renderCheckboxes();
+                this.setupUploadHandlers();
+                this.navigate('home', 'All');
+            },
+
+            // --- Storage Methods ---
+            loadGames() {
+                const stored = localStorage.getItem('camera_portal_games');
+                if (stored) {
+                    try {
+                        AppState.games = JSON.parse(stored);
+                        // Ensure demo games exist if user deleted everything
+                        if(AppState.games.length === 0) {
+                             AppState.games = [...defaultGames];
+                        }
+                    } catch (e) {
+                        console.error("Parse error", e);
+                        AppState.games = [...defaultGames];
+                    }
+                } else {
+                    AppState.games = [...defaultGames];
+                    this.saveGames();
+                }
+            },
+
+            saveGames() {
+                try {
+                    localStorage.setItem('camera_portal_games', JSON.stringify(AppState.games));
+                } catch (e) {
+                    if(e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                        this.showToast("Storage limit reached! Cannot save this game. Try uploading a smaller file.", "error");
+                        throw e; // rethrow to stop form submission process
+                    } else {
+                        console.error("Local storage error:", e);
+                    }
+                }
+            },
+
+            // --- UI Rendering Methods ---
+            renderNavbar() {
+                const container = document.getElementById('nav-categories');
+                container.innerHTML = '';
+                
+                const allCategories = ['All', ...CATEGORIES];
+
+                allCategories.forEach(cat => {
+                    const btn = document.createElement('button');
+                    
+                    const isActive = AppState.currentCategory === cat && AppState.currentView === 'home';
+                    
+                    btn.className = `px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                        isActive 
+                        ? 'bg-brand-green text-brand-dark shadow-sm' 
+                        : 'bg-transparent text-gray-500 hover:bg-gray-100 hover:text-brand-dark'
+                    }`;
+                    btn.textContent = cat;
+                    btn.onclick = () => this.navigate('home', cat);
+                    container.appendChild(btn);
+                });
+            },
+
+            renderCheckboxes() {
+                const container = document.getElementById('checkbox-container');
+                container.innerHTML = '';
+
+                CATEGORIES.forEach(cat => {
+                    const label = document.createElement('label');
+                    label.className = "custom-checkbox flex items-center cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors";
+                    
+                    label.innerHTML = `
+                        <div class="relative flex items-center justify-center w-5 h-5 mr-3">
+                            <input type="checkbox" name="game-categories" value="${cat}" class="opacity-0 absolute h-0 w-0">
+                            <div class="w-5 h-5 bg-white border-2 border-gray-300 rounded transition-colors flex items-center justify-center">
+                                <svg class="hidden w-3 h-3 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-700 font-medium">${cat}</span>
+                    `;
+                    container.appendChild(label);
+                });
+            },
+
+            // --- Navigation & View Logic ---
+            navigate(view, category = null) {
+                // Hide all views
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                
+                AppState.currentView = view;
+                if (category) AppState.currentCategory = category;
+
+                document.getElementById(`view-${view}`).classList.remove('hidden');
+
+                if (view === 'home') {
+                    this.renderNavbar();
+                    this.renderGameGrid();
+                    // Stop game running in background
+                    document.getElementById('game-iframe').src = 'about:blank';
+                }
+            },
+
+            renderGameGrid() {
+                const grid = document.getElementById('game-grid');
+                const emptyState = document.getElementById('empty-state');
+                const title = document.getElementById('current-category-title');
+                const subtitle = document.getElementById('category-subtitle');
+                
+                grid.innerHTML = '';
+                
+                // Filter Logic: Check if game categories array includes the current filter
+                const filteredGames = AppState.games.filter(g => {
+                    if (AppState.currentCategory === 'All') return true;
+                    // Protect against older objects that might not have arrays
+                    const cats = Array.isArray(g.categories) ? g.categories : [];
+                    return cats.includes(AppState.currentCategory);
+                });
+                
+                title.textContent = AppState.currentCategory === 'All' ? 'All Games' : `${AppState.currentCategory} Games`;
+                subtitle.textContent = `Showing ${filteredGames.length} game${filteredGames.length !== 1 ? 's' : ''}`;
+
+                if (filteredGames.length === 0) {
+                    grid.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                } else {
+                    grid.classList.remove('hidden');
+                    emptyState.classList.add('hidden');
+
+                    filteredGames.reverse().forEach(game => { // Reverse to show newest first
+                        const card = document.createElement('div');
+                        card.className = 'game-card bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer flex flex-col h-full';
+                        card.onclick = () => this.playGame(game.id);
+
+                        // Format categories tags
+                        const cats = Array.isArray(game.categories) ? game.categories : [];
+                        const tagsHTML = cats.slice(0,3).map(c => 
+                            `<span class="inline-block bg-gray-100 text-gray-600 text-[10px] px-2 py-1 rounded-md font-medium mr-1 mb-1 border border-gray-200">${c}</span>`
+                        ).join('');
+                        
+                        const extraTag = cats.length > 3 ? `<span class="inline-block text-gray-400 text-[10px] px-1 py-1 font-medium mb-1">+${cats.length - 3}</span>` : '';
+
+                        // Delete button (don't delete defaults for demo purposes, or allow if preferred)
+                        const isDemo = game.id.startsWith('demo_');
+                        const deleteBtnHTML = !isDemo ? `
+                            <button onclick="event.stopPropagation(); app.deleteGame('${game.id}')" class="absolute top-2 right-2 bg-white text-gray-400 hover:text-red-500 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-sm border border-gray-200" title="Remove Game">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        ` : '';
+
+                        card.innerHTML = `
+                            <div class="relative group aspect-video bg-gray-50 border-b border-gray-100 overflow-hidden">
+                                ${deleteBtnHTML}
+                                <img src="${game.thumbnail}" alt="${game.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute inset-0 bg-brand-dark/0 group-hover:bg-brand-dark/10 transition-colors flex items-center justify-center">
+                                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md transform scale-50 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300">
+                                        <i class="fa-solid fa-play text-brand-green ml-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4 flex-grow flex flex-col">
+                                <h3 class="text-base font-bold text-brand-dark mb-2 line-clamp-1">${game.title}</h3>
+                                <div class="flex-grow"></div> <!-- spacer -->
+                                <div class="flex flex-wrap mt-auto pt-2">
+                                    ${tagsHTML} ${extraTag}
+                                </div>
+                            </div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            },
+
+            playGame(id) {
+                const game = AppState.games.find(g => g.id === id);
+                if (!game) return;
+
+                document.getElementById('player-title').textContent = game.title;
+                const iframe = document.getElementById('game-iframe');
+                
+                // Using base64 data URL to load the HTML securely within iframe
+                iframe.src = game.source;
+                
+                this.navigate('player');
+            },
+
+            deleteGame(id) {
+                AppState.games = AppState.games.filter(g => g.id !== id);
+                this.saveGames();
+                this.renderGameGrid();
+                this.showToast("Game removed", "success");
+            },
+
+            setupUploadHandlers() {
+                const fileInput = document.getElementById('file-upload');
+                const dropZone = document.getElementById('drop-zone');
+                const form = document.getElementById('upload-form');
+                const nameDisplay = document.getElementById('file-name-display');
+
+                // File UI interactions
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        nameDisplay.innerHTML = `<span class="text-brand-green font-semibold"><i class="fa-solid fa-file-check mr-1"></i> ${e.target.files[0].name}</span>`;
+                    }
+                });
+
+                // Drag & Drop visual feedback
+                ['dragover', 'dragenter'].forEach(type => {
+                    dropZone.addEventListener(type, (e) => {
+                        e.preventDefault();
+                        dropZone.classList.add('border-brand-green', 'bg-brand-light-green/10');
+                    });
+                });
+                
+                ['dragleave', 'dragend', 'drop'].forEach(type => {
+                    dropZone.addEventListener(type, (e) => {
+                        e.preventDefault();
+                        dropZone.classList.remove('border-brand-green', 'bg-brand-light-green/10');
+                    });
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    if (e.dataTransfer.files.length > 0) {
+                        const file = e.dataTransfer.files[0];
+                        if(file.name.toLowerCase().endsWith('.html') || file.name.toLowerCase().endsWith('.htm')) {
+                            fileInput.files = e.dataTransfer.files;
+                            nameDisplay.innerHTML = `<span class="text-brand-green font-semibold"><i class="fa-solid fa-file-check mr-1"></i> ${file.name}</span>`;
+                        } else {
+                            this.showToast('Please drop an HTML file', 'error');
+                        }
+                    }
+                });
+
+                // Handle Form Submission
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    const titleInput = document.getElementById('game-title').value.trim();
+                    const file = fileInput.files[0];
+
+                    // Gather checked categories
+                    const categoryCheckboxes = document.querySelectorAll('input[name="game-categories"]:checked');
+                    const selectedCategories = Array.from(categoryCheckboxes).map(cb => cb.value);
+
+                    if (!file) {
+                        this.showToast('Please select an HTML file', 'error');
+                        return;
+                    }
+                    if (selectedCategories.length === 0) {
+                        this.showToast('Please select at least one category', 'error');
+                        return;
+                    }
+
+                    // Read file as Base64 Data URL
+                    const reader = new FileReader();
+                    
+                    reader.onload = (event) => {
+                        const base64Data = event.target.result;
+                        
+                        const id = 'game_' + Date.now();
+                        // Generate minimalist thumbnail text
+                        const shortTitle = titleInput.substring(0, 2).toUpperCase();
+                        const thumb = `https://placehold.co/600x400/f8fafc/34d399?text=${shortTitle}`;
+
+                        const newGame = {
+                            id: id,
+                            title: titleInput,
+                            categories: selectedCategories,
+                            source: base64Data, // data:text/html;base64,...
+                            thumbnail: thumb,
+                            dateAdded: Date.now()
+                        };
+
+                        try {
+                            AppState.games.push(newGame);
+                            this.saveGames();
+                            
+                            // Reset Form
+                            form.reset();
+                            nameDisplay.textContent = 'Single HTML file only';
+                            
+                            this.showToast('Game published successfully!', 'success');
+                            // Navigate home and show the new game
+                            this.navigate('home', 'All');
+
+                        } catch (err) {
+                            // saveGames() handles the quota exceeded message and throws error
+                            AppState.games.pop(); // Revert array mutation
+                        }
+                    };
+
+                    reader.onerror = () => {
+                        this.showToast('Error reading the file', 'error');
+                    };
+
+                    // Execute read
+                    reader.readAsDataURL(file);
+                });
+            },
+
+            showToast(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+                
+                const icon = type === 'success' ? 'fa-check-circle text-brand-green' : 
+                             type === 'error' ? 'fa-triangle-exclamation text-white' : 
+                             'fa-circle-info text-blue-400';
+                
+                toast.innerHTML = `
+                    <i class="fa-solid ${icon} text-xl"></i> 
+                    <div class="font-medium text-sm">${message}</div>
+                `;
+                container.appendChild(toast);
+                
+                setTimeout(() => {
+                    if(toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 3500);
+            }
+        };
+
+        // Initialize when DOM is ready
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
+    </script>
+</body>
+</html>
