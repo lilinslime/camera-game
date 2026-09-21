@@ -146,11 +146,50 @@
       cursor: pointer;
       display: flex;
       flex-direction: column;
+      position: relative; /* จำเป็นสำหรับปุ่มลบ */
     }
 
     .game-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* สไตล์ปุ่มลบเกม */
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.2s ease, background 0.2s ease;
+      z-index: 5;
+    }
+
+    .delete-btn:hover {
+      background: rgba(185, 28, 28, 1);
+    }
+
+    /* ให้ปุ่มลบโผล่มาตอนเอาเมาส์ไปชี้ที่การ์ดเกม */
+    .game-card:hover .delete-btn {
+      opacity: 1;
+    }
+    
+    /* สำหรับมือถือ ให้แสดงปุ่มลบตลอดเวลาเพราะไม่มี hover */
+    @media (hover: none) {
+      .delete-btn {
+        opacity: 0.8;
+      }
     }
 
     .game-thumbnail {
@@ -176,6 +215,7 @@
       font-size: 1rem;
       font-weight: 600;
       margin-bottom: 0.5rem;
+      padding-right: 20px;
     }
 
     .game-tags {
@@ -351,8 +391,7 @@
       <span class="modal-title" id="playerGameTitle">Game Playing</span>
       <button class="btn" id="closePlayerBtn">Exit Game</button>
     </div>
-    <!-- allow="camera; microphone" อนุญาตให้เกมเข้าถึงกล้องและไมโครโฟนได้ -->
-    <iframe id="gameIframe" class="player-frame" allow="camera; microphone; autoplay; fullscreen"></iframe>
+    <iframe id="gameIframe" class="player-frame" allow="camera *; microphone *; autoplay *; fullscreen *"></iframe>
   </div>
 
   <!-- Upload Modal -->
@@ -430,7 +469,6 @@
         title: 'F1 Motion Racing (Pro Mode)',
         emoji: '🏎️',
         categories: ['reflex', '1 player', 'exercise'],
-        // Simple HTML demo with motion/canvas
         code: `<!DOCTYPE html><html><head><style>body{margin:0;background:#111;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;}h1{color:#22c55e;}</style></head><body><h1>🏎️ F1 Motion Racing</h1><p>Demo camera mode</p></body></html>`
       }
     ];
@@ -477,6 +515,7 @@
         card.onclick = () => playGame(game);
 
         card.innerHTML = `
+          <button class="delete-btn" title="Delete Game">✖</button>
           <div class="game-thumbnail">${game.emoji || '🎮'}</div>
           <div class="game-info">
             <div class="game-title">${escapeHtml(game.title)}</div>
@@ -486,17 +525,39 @@
           </div>
         `;
 
+        // Event listener สำหรับปุ่มลบ
+        const delBtn = card.querySelector('.delete-btn');
+        delBtn.onclick = (e) => {
+          e.stopPropagation(); // ป้องกันไม่ให้คลิกแล้วเกมเปิดขึ้นมา
+          deleteGame(game.id, game.title);
+        };
+
         gameGrid.appendChild(card);
       });
+    }
+
+    // ฟังก์ชันลบเกมพร้อมตรวจสอบรหัส 9101
+    function deleteGame(id, title) {
+      const password = prompt(\`คุณกำลังจะลบเกม "\${title}"\\nกรุณาใส่รหัสผ่านเพื่อยืนยันการลบ:\`);
+      
+      if (password === null) {
+        return; // กดยกเลิก
+      }
+      
+      if (password === "9101") {
+        games = games.filter(game => game.id !== id);
+        localStorage.setItem('camera_games', JSON.stringify(games));
+        renderGames();
+        alert("ลบเกมเรียบร้อยแล้ว!");
+      } else {
+        alert("รหัสผ่านไม่ถูกต้อง! ไม่สามารถลบเกมได้");
+      }
     }
 
     // Play Game Action
     function playGame(game) {
       playerGameTitle.innerText = game.title;
-      
-      // Inject content directly to iframe document
       gameIframe.srcdoc = game.code;
-
       mainHeader.classList.add('hidden');
       mainContent.classList.add('hidden');
       playerView.classList.remove('hidden');
