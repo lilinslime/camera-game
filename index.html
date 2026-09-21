@@ -146,7 +146,7 @@
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      position: relative; 
+      position: relative; /* เพิ่มสำหรับปุ่มลบ */
     }
 
     .game-card:hover {
@@ -154,6 +154,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
+    /* เพิ่มสไตล์ปุ่มลบเกม */
     .delete-btn {
       position: absolute;
       top: 10px;
@@ -357,6 +358,7 @@
 </head>
 <body>
 
+  <!-- Main Header -->
   <header id="mainHeader">
     <div class="logo" id="logoBtn">
       <span>Camera-game</span>
@@ -367,6 +369,7 @@
     </nav>
   </header>
 
+  <!-- Main Content -->
   <main id="mainContent">
     <div class="categories" id="categoryFilter">
       <div class="category-chip active" data-category="All">All Games</div>
@@ -380,14 +383,17 @@
     <div class="game-grid" id="gameGrid"></div>
   </main>
 
+  <!-- Game Player View -->
   <div id="playerView" class="player-container hidden">
     <div class="player-header">
       <span class="modal-title" id="playerGameTitle">Game Playing</span>
       <button class="btn" id="closePlayerBtn">Exit Game</button>
     </div>
-    <iframe id="gameIframe" class="player-frame" allow="camera *; microphone *; autoplay *; fullscreen *"></iframe>
+    <!-- allow="camera; microphone" อนุญาตให้เกมเข้าถึงกล้องและไมโครโฟนได้ -->
+    <iframe id="gameIframe" class="player-frame" allow="camera; microphone; autoplay; fullscreen"></iframe>
   </div>
 
+  <!-- Upload Modal -->
   <div class="modal-overlay hidden" id="uploadModal">
     <div class="modal">
       <div class="modal-header">
@@ -397,8 +403,7 @@
       <form id="uploadForm">
         <div class="form-group">
           <label class="form-label" for="gameTitle">Game Title</label>
-          <!-- เอาคำว่า required ออกเพื่อจัดการการแจ้งเตือนด้วยตัวเอง -->
-          <input type="text" id="gameTitle" class="form-input" placeholder="e.g. Motion F1 Racing">
+          <input type="text" id="gameTitle" class="form-input" required placeholder="e.g. Motion F1 Racing">
         </div>
 
         <div class="form-group">
@@ -426,20 +431,21 @@
 
         <div class="form-group">
           <label class="form-label" for="gameFile">HTML File</label>
-          <input type="file" id="gameFile" class="form-input" accept=".html">
+          <input type="file" id="gameFile" class="form-input" accept=".html" required>
         </div>
 
-        <!-- เปลี่ยนปุ่ม submit เป็นปุ่มธรรมดา (type="button") เพื่อเลี่ยงบัคของฟอร์ม -->
-        <button type="button" id="submitUploadBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Save & Upload</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Save & Upload</button>
       </form>
     </div>
   </div>
 
   <script>
+    // State Variables
     let selectedCategory = 'All';
     let selectedEmoji = '🏎️';
     let games = [];
 
+    // DOM Elements
     const mainHeader = document.getElementById('mainHeader');
     const mainContent = document.getElementById('mainContent');
     const playerView = document.getElementById('playerView');
@@ -450,28 +456,31 @@
     const openUploadBtn = document.getElementById('openUploadBtn');
     const closeUploadBtn = document.getElementById('closeUploadBtn');
     const closePlayerBtn = document.getElementById('closePlayerBtn');
-    const submitUploadBtn = document.getElementById('submitUploadBtn');
     const gameIframe = document.getElementById('gameIframe');
     const playerGameTitle = document.getElementById('playerGameTitle');
     const logoBtn = document.getElementById('logoBtn');
     const emojiSelector = document.getElementById('emojiSelector');
 
+    // Default Games Data
     const defaultGames = [
       {
         id: 'default-1',
         title: 'F1 Motion Racing (Pro Mode)',
         emoji: '🏎️',
         categories: ['reflex', '1 player', 'exercise'],
+        // Simple HTML demo with motion/canvas
         code: `<!DOCTYPE html><html><head><style>body{margin:0;background:#111;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;}h1{color:#22c55e;}</style></head><body><h1>🏎️ F1 Motion Racing</h1><p>Demo camera mode</p></body></html>`
       }
     ];
 
+    // Initialization
     function init() {
       loadGames();
       renderGames();
       setupEventListeners();
     }
 
+    // Load Games from LocalStorage
     function loadGames() {
       const stored = localStorage.getItem('camera_games');
       if (stored) {
@@ -486,6 +495,7 @@
       }
     }
 
+    // Render Games Grid
     function renderGames() {
       gameGrid.innerHTML = '';
       
@@ -504,6 +514,7 @@
         card.className = 'game-card';
         card.onclick = () => playGame(game);
 
+        // เพิ่มปุ่มลบ
         card.innerHTML = `
           <button class="delete-btn" title="Delete Game">✖</button>
           <div class="game-thumbnail">${game.emoji || '🎮'}</div>
@@ -515,9 +526,10 @@
           </div>
         `;
 
+        // Event listener สำหรับปุ่มลบ
         const delBtn = card.querySelector('.delete-btn');
         delBtn.onclick = (e) => {
-          e.stopPropagation(); 
+          e.stopPropagation(); // ป้องกันไม่ให้คลิกแล้วเกมเปิดขึ้นมา
           deleteGame(game.id, game.title);
         };
 
@@ -525,11 +537,12 @@
       });
     }
 
+    // ฟังก์ชันลบเกมพร้อมตรวจสอบรหัส 9101
     function deleteGame(id, title) {
-      const password = prompt(\`คุณกำลังจะลบเกม "\${title}"\\nกรุณาใส่รหัสผ่านเพื่อยืนยันการลบ:\`);
+      const password = prompt(`คุณกำลังจะลบเกม "${title}"\nกรุณาใส่รหัสผ่านเพื่อยืนยันการลบ:`);
       
       if (password === null) {
-        return; 
+        return; // กดยกเลิก
       }
       
       if (password === "9101") {
@@ -542,14 +555,19 @@
       }
     }
 
+    // Play Game Action
     function playGame(game) {
       playerGameTitle.innerText = game.title;
+      
+      // Inject content directly to iframe document
       gameIframe.srcdoc = game.code;
+
       mainHeader.classList.add('hidden');
       mainContent.classList.add('hidden');
       playerView.classList.remove('hidden');
     }
 
+    // Exit Game Action
     function stopGame() {
       gameIframe.srcdoc = '';
       playerView.classList.add('hidden');
@@ -557,7 +575,9 @@
       mainContent.classList.remove('hidden');
     }
 
+    // Setup Event Listeners
     function setupEventListeners() {
+      // Category Filter Event
       categoryFilter.addEventListener('click', (e) => {
         if (e.target.classList.contains('category-chip')) {
           document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
@@ -567,6 +587,7 @@
         }
       });
 
+      // Emoji Selection Event
       emojiSelector.addEventListener('click', (e) => {
         if (e.target.classList.contains('emoji-option')) {
           document.querySelectorAll('.emoji-option').forEach(opt => opt.classList.remove('selected'));
@@ -575,41 +596,31 @@
         }
       });
 
+      // Upload Modal Events
       openUploadBtn.onclick = () => uploadModal.classList.remove('hidden');
       closeUploadBtn.onclick = () => uploadModal.classList.add('hidden');
       closePlayerBtn.onclick = stopGame;
       logoBtn.onclick = stopGame;
 
-      // จัดการระบบอัปโหลดใหม่ (แจ้งเตือนผู้ใช้ชัดเจนขึ้น)
-      submitUploadBtn.onclick = () => {
+      // Handle Upload Form Submit
+      uploadForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
         const title = document.getElementById('gameTitle').value.trim();
         const fileInput = document.getElementById('gameFile');
         const checkedCategories = Array.from(document.querySelectorAll('input[name="categories"]:checked')).map(cb => cb.value);
 
-        // ตรวจสอบการกรอกข้อมูล
-        if (!title) {
-          alert('❌ กรุณาตั้งชื่อเกม (Game Title)');
-          return;
-        }
-
         if (checkedCategories.length === 0) {
-          alert('❌ กรุณาเลือกประเภทเกมอย่างน้อย 1 ประเภท');
+          alert('Please select at least one category.');
           return;
         }
 
         if (fileInput.files.length === 0) {
-          alert('❌ กรุณากดเลือกไฟล์เกม (.html) ก่อนทำการอัปโหลด');
+          alert('Please select an HTML file.');
           return;
         }
 
         const file = fileInput.files[0];
-        
-        // เช็คให้ชัวร์ว่าเป็นไฟล์ .html
-        if (!file.name.toLowerCase().endsWith('.html')) {
-          alert('❌ ไฟล์ที่อัปโหลดต้องเป็นนามสกุล .html เท่านั้น');
-          return;
-        }
-
         const reader = new FileReader();
 
         reader.onload = function(evt) {
@@ -623,39 +634,24 @@
             code: gameCode
           };
 
-          try {
-            // ลองบันทึกข้อมูล
-            games.unshift(newGame);
-            localStorage.setItem('camera_games', JSON.stringify(games));
-            
-            // ถ้าบันทึกผ่าน ให้รีเซ็ตค่าและปิดหน้าต่าง
-            uploadForm.reset();
-            uploadModal.classList.add('hidden');
-            renderGames();
-            alert('✅ อัปโหลดเกมขึ้นระบบสำเร็จ!');
-            
-          } catch (error) {
-            // ถ้าเกิด Error (เช่น ข้อมูลเต็ม) ให้เอาเกมที่เพิ่งใส่เข้าไปออก
-            games.shift();
-            
-            // เช็คว่า Error เกิดจากความจำ Local Storage เต็มหรือไม่
-            if (error.name === 'QuotaExceededError' || error.code === 22) {
-              alert('⚠️ พื้นที่เก็บข้อมูลของเบราว์เซอร์เต็ม!\nคุณจำเป็นต้องลบเกมเก่าออกบางส่วน ก่อนที่จะอัปโหลดเกมใหม่ครับ');
-            } else {
-              alert('❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + error.message);
-            }
-          }
+          games.unshift(newGame);
+          localStorage.setItem('camera_games', JSON.stringify(games));
+          
+          uploadForm.reset();
+          uploadModal.classList.add('hidden');
+          renderGames();
         };
 
-        // เริ่มอ่านไฟล์
         reader.readAsText(file);
-      };
+      });
     }
 
+    // Helper Utility
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
+    // Run Application
     init();
   </script>
 </body>
