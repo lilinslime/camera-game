@@ -545,7 +545,7 @@
         return; // กดยกเลิก
       }
       
-      if (password === "9101") {
+      if (password === "ความลับจ้า") {
         games = games.filter(game => game.id !== id);
         localStorage.setItem('camera_games', JSON.stringify(games));
         renderGames();
