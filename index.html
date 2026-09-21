@@ -146,7 +146,7 @@
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      position: relative; /* จำเป็นสำหรับปุ่มลบ */
+      position: relative; 
     }
 
     .game-card:hover {
@@ -154,7 +154,6 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
-    /* สไตล์ปุ่มลบเกม */
     .delete-btn {
       position: absolute;
       top: 10px;
@@ -180,12 +179,10 @@
       background: rgba(185, 28, 28, 1);
     }
 
-    /* ให้ปุ่มลบโผล่มาตอนเอาเมาส์ไปชี้ที่การ์ดเกม */
     .game-card:hover .delete-btn {
       opacity: 1;
     }
     
-    /* สำหรับมือถือ ให้แสดงปุ่มลบตลอดเวลาเพราะไม่มี hover */
     @media (hover: none) {
       .delete-btn {
         opacity: 0.8;
@@ -360,7 +357,6 @@
 </head>
 <body>
 
-  <!-- Main Header -->
   <header id="mainHeader">
     <div class="logo" id="logoBtn">
       <span>Camera-game</span>
@@ -371,7 +367,6 @@
     </nav>
   </header>
 
-  <!-- Main Content -->
   <main id="mainContent">
     <div class="categories" id="categoryFilter">
       <div class="category-chip active" data-category="All">All Games</div>
@@ -385,7 +380,6 @@
     <div class="game-grid" id="gameGrid"></div>
   </main>
 
-  <!-- Game Player View -->
   <div id="playerView" class="player-container hidden">
     <div class="player-header">
       <span class="modal-title" id="playerGameTitle">Game Playing</span>
@@ -394,7 +388,6 @@
     <iframe id="gameIframe" class="player-frame" allow="camera *; microphone *; autoplay *; fullscreen *"></iframe>
   </div>
 
-  <!-- Upload Modal -->
   <div class="modal-overlay hidden" id="uploadModal">
     <div class="modal">
       <div class="modal-header">
@@ -404,7 +397,8 @@
       <form id="uploadForm">
         <div class="form-group">
           <label class="form-label" for="gameTitle">Game Title</label>
-          <input type="text" id="gameTitle" class="form-input" required placeholder="e.g. Motion F1 Racing">
+          <!-- เอาคำว่า required ออกเพื่อจัดการการแจ้งเตือนด้วยตัวเอง -->
+          <input type="text" id="gameTitle" class="form-input" placeholder="e.g. Motion F1 Racing">
         </div>
 
         <div class="form-group">
@@ -432,21 +426,20 @@
 
         <div class="form-group">
           <label class="form-label" for="gameFile">HTML File</label>
-          <input type="file" id="gameFile" class="form-input" accept=".html" required>
+          <input type="file" id="gameFile" class="form-input" accept=".html">
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Save & Upload</button>
+        <!-- เปลี่ยนปุ่ม submit เป็นปุ่มธรรมดา (type="button") เพื่อเลี่ยงบัคของฟอร์ม -->
+        <button type="button" id="submitUploadBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Save & Upload</button>
       </form>
     </div>
   </div>
 
   <script>
-    // State Variables
     let selectedCategory = 'All';
     let selectedEmoji = '🏎️';
     let games = [];
 
-    // DOM Elements
     const mainHeader = document.getElementById('mainHeader');
     const mainContent = document.getElementById('mainContent');
     const playerView = document.getElementById('playerView');
@@ -457,12 +450,12 @@
     const openUploadBtn = document.getElementById('openUploadBtn');
     const closeUploadBtn = document.getElementById('closeUploadBtn');
     const closePlayerBtn = document.getElementById('closePlayerBtn');
+    const submitUploadBtn = document.getElementById('submitUploadBtn');
     const gameIframe = document.getElementById('gameIframe');
     const playerGameTitle = document.getElementById('playerGameTitle');
     const logoBtn = document.getElementById('logoBtn');
     const emojiSelector = document.getElementById('emojiSelector');
 
-    // Default Games Data
     const defaultGames = [
       {
         id: 'default-1',
@@ -473,14 +466,12 @@
       }
     ];
 
-    // Initialization
     function init() {
       loadGames();
       renderGames();
       setupEventListeners();
     }
 
-    // Load Games from LocalStorage
     function loadGames() {
       const stored = localStorage.getItem('camera_games');
       if (stored) {
@@ -495,7 +486,6 @@
       }
     }
 
-    // Render Games Grid
     function renderGames() {
       gameGrid.innerHTML = '';
       
@@ -525,10 +515,9 @@
           </div>
         `;
 
-        // Event listener สำหรับปุ่มลบ
         const delBtn = card.querySelector('.delete-btn');
         delBtn.onclick = (e) => {
-          e.stopPropagation(); // ป้องกันไม่ให้คลิกแล้วเกมเปิดขึ้นมา
+          e.stopPropagation(); 
           deleteGame(game.id, game.title);
         };
 
@@ -536,12 +525,11 @@
       });
     }
 
-    // ฟังก์ชันลบเกมพร้อมตรวจสอบรหัส 9101
     function deleteGame(id, title) {
       const password = prompt(\`คุณกำลังจะลบเกม "\${title}"\\nกรุณาใส่รหัสผ่านเพื่อยืนยันการลบ:\`);
       
       if (password === null) {
-        return; // กดยกเลิก
+        return; 
       }
       
       if (password === "9101") {
@@ -554,7 +542,6 @@
       }
     }
 
-    // Play Game Action
     function playGame(game) {
       playerGameTitle.innerText = game.title;
       gameIframe.srcdoc = game.code;
@@ -563,7 +550,6 @@
       playerView.classList.remove('hidden');
     }
 
-    // Exit Game Action
     function stopGame() {
       gameIframe.srcdoc = '';
       playerView.classList.add('hidden');
@@ -571,9 +557,7 @@
       mainContent.classList.remove('hidden');
     }
 
-    // Setup Event Listeners
     function setupEventListeners() {
-      // Category Filter Event
       categoryFilter.addEventListener('click', (e) => {
         if (e.target.classList.contains('category-chip')) {
           document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
@@ -583,7 +567,6 @@
         }
       });
 
-      // Emoji Selection Event
       emojiSelector.addEventListener('click', (e) => {
         if (e.target.classList.contains('emoji-option')) {
           document.querySelectorAll('.emoji-option').forEach(opt => opt.classList.remove('selected'));
@@ -592,31 +575,41 @@
         }
       });
 
-      // Upload Modal Events
       openUploadBtn.onclick = () => uploadModal.classList.remove('hidden');
       closeUploadBtn.onclick = () => uploadModal.classList.add('hidden');
       closePlayerBtn.onclick = stopGame;
       logoBtn.onclick = stopGame;
 
-      // Handle Upload Form Submit
-      uploadForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-
+      // จัดการระบบอัปโหลดใหม่ (แจ้งเตือนผู้ใช้ชัดเจนขึ้น)
+      submitUploadBtn.onclick = () => {
         const title = document.getElementById('gameTitle').value.trim();
         const fileInput = document.getElementById('gameFile');
         const checkedCategories = Array.from(document.querySelectorAll('input[name="categories"]:checked')).map(cb => cb.value);
 
+        // ตรวจสอบการกรอกข้อมูล
+        if (!title) {
+          alert('❌ กรุณาตั้งชื่อเกม (Game Title)');
+          return;
+        }
+
         if (checkedCategories.length === 0) {
-          alert('Please select at least one category.');
+          alert('❌ กรุณาเลือกประเภทเกมอย่างน้อย 1 ประเภท');
           return;
         }
 
         if (fileInput.files.length === 0) {
-          alert('Please select an HTML file.');
+          alert('❌ กรุณากดเลือกไฟล์เกม (.html) ก่อนทำการอัปโหลด');
           return;
         }
 
         const file = fileInput.files[0];
+        
+        // เช็คให้ชัวร์ว่าเป็นไฟล์ .html
+        if (!file.name.toLowerCase().endsWith('.html')) {
+          alert('❌ ไฟล์ที่อัปโหลดต้องเป็นนามสกุล .html เท่านั้น');
+          return;
+        }
+
         const reader = new FileReader();
 
         reader.onload = function(evt) {
@@ -630,24 +623,39 @@
             code: gameCode
           };
 
-          games.unshift(newGame);
-          localStorage.setItem('camera_games', JSON.stringify(games));
-          
-          uploadForm.reset();
-          uploadModal.classList.add('hidden');
-          renderGames();
+          try {
+            // ลองบันทึกข้อมูล
+            games.unshift(newGame);
+            localStorage.setItem('camera_games', JSON.stringify(games));
+            
+            // ถ้าบันทึกผ่าน ให้รีเซ็ตค่าและปิดหน้าต่าง
+            uploadForm.reset();
+            uploadModal.classList.add('hidden');
+            renderGames();
+            alert('✅ อัปโหลดเกมขึ้นระบบสำเร็จ!');
+            
+          } catch (error) {
+            // ถ้าเกิด Error (เช่น ข้อมูลเต็ม) ให้เอาเกมที่เพิ่งใส่เข้าไปออก
+            games.shift();
+            
+            // เช็คว่า Error เกิดจากความจำ Local Storage เต็มหรือไม่
+            if (error.name === 'QuotaExceededError' || error.code === 22) {
+              alert('⚠️ พื้นที่เก็บข้อมูลของเบราว์เซอร์เต็ม!\nคุณจำเป็นต้องลบเกมเก่าออกบางส่วน ก่อนที่จะอัปโหลดเกมใหม่ครับ');
+            } else {
+              alert('❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + error.message);
+            }
+          }
         };
 
+        // เริ่มอ่านไฟล์
         reader.readAsText(file);
-      });
+      };
     }
 
-    // Helper Utility
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
 
-    // Run Application
     init();
   </script>
 </body>
